@@ -19,6 +19,10 @@ module Challonge
         end
       end
 
+      def show(id_or_url, params = {})
+        get("/v1/tournaments/#{id_or_url}", params)
+      end
+
       private :get, :post
     end
   end
