@@ -11,7 +11,11 @@ module Challonge
 
       def create(params = {})
         post("/v1/tournaments") do |req|
-          req.params = params
+          params.deep_symbolize_keys!
+          next if params[:tournament].blank?
+          params[:tournament].keys.each do |key|
+            req.params["tournament[#{key}]"] = params[:tournament][key]
+          end
         end
       end
 

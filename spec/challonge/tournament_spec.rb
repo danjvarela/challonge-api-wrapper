@@ -17,7 +17,7 @@ RSpec.describe Challonge::Tournament do
 
   describe ".create" do
     before :all do
-      @success_response = Challonge::Tournament.create({"tournament[name]" => ("a".."z").to_a.sample(8).join})
+      @success_response = Challonge::Tournament.create({tournament: {name: ("a".."z").to_a.sample(8).join}})
       @error_response = Challonge::Tournament.create
     end
 
