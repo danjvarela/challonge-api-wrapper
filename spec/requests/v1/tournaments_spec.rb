@@ -141,4 +141,44 @@ RSpec.describe "V1::Tournaments", type: :request do
       end
     end
   end
+
+  describe "PUT v1/tournaments/:id" do
+    context "with valid params" do
+      before :all do
+        @created_tournament_response = Challonge::Tournament.create(tournament: {name: random_name})
+        @created_tournament_response_id = @created_tournament_response.body.tournament.id
+        put v1_tournament_path(id: @created_tournament_response_id), params: {tournament: {name: random_name}}
+      end
+
+      after :all do
+        Challonge::Tournament.destroy(@created_tournament_response_id)
+      end
+
+      context "response" do
+        subject { response }
+        it { is_expected.to have_http_status(200) }
+
+        context "body" do
+          subject { json_body }
+          it { is_expected.to have_key("tournament") }
+        end
+      end
+    end
+
+    context "with invalid params" do
+      before :all do
+        put v1_tournament_path(long_id), params: {tournament: {name: ""}}
+      end
+
+      context "response" do
+        subject { response }
+        it { expect(response.status).to be >= 400 }
+
+        context "body" do
+          subject { json_body }
+          it { is_expected.to have_key("errors") }
+        end
+      end
+    end
+  end
 end

@@ -32,6 +32,13 @@ module Challonge
       end
     end
 
+    def put(url, body = nil, headers = nil)
+      @@connection.put(url, body, headers) do |req|
+        yield req if block_given?
+        req.params["api_key"] = ENV["CHALLONGE_API_KEY"]
+      end
+    end
+
     def params_with_token(params)
       {api_key: ENV["CHALLONGE_API_KEY"]}.merge(params)
     end

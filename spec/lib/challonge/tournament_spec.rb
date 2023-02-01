@@ -70,10 +70,6 @@ RSpec.describe Challonge::Tournament do
       Challonge::Tournament.destroy(@created_tournament_response.body.tournament.id)
     end
 
-    let(:invalid_tournament_response) do
-      Challonge::Tournament.create(tournament: {name: nil})
-    end
-
     context "with valid params" do
       context ".body" do
         subject { @created_tournament_response.body }
@@ -86,6 +82,10 @@ RSpec.describe Challonge::Tournament do
     end
 
     context "with invalid params" do
+      let(:invalid_tournament_response) do
+        Challonge::Tournament.create(tournament: {name: nil})
+      end
+
       context ".body" do
         subject { invalid_tournament_response.body }
         it { expect(subject.keys).to include(:errors) }
@@ -128,6 +128,46 @@ RSpec.describe Challonge::Tournament do
       end
       context ".status" do
         subject { non_existent_tournament_response.status }
+        it { is_expected.to be >= 400 }
+      end
+    end
+  end
+
+  describe ".update" do
+    before :all do
+      @created_tournament_response = Challonge::Tournament.create(tournament: {name: random_name})
+      @updated_tournament_response = Challonge::Tournament.update(
+        @created_tournament_response.body.tournament.id,
+        {tournament: {name: random_name}}
+      )
+    end
+
+    after :all do
+      Challonge::Tournament.destroy(@created_tournament_response.body.tournament.id)
+    end
+
+    context "with valid params" do
+      context ".body" do
+        subject { @updated_tournament_response.body }
+        it { expect(subject.keys).to include(:tournament) }
+      end
+      context ".status" do
+        subject { @updated_tournament_response.status }
+        it { is_expected.to eq 200 }
+      end
+    end
+
+    context "with invalid params" do
+      let(:invalid_tournament_response) do
+        Challonge::Tournament.update(long_id, tournament: {name: nil})
+      end
+
+      context ".body" do
+        subject { invalid_tournament_response.body }
+        it { expect(subject.keys).to include(:errors) }
+      end
+      context ".status" do
+        subject { invalid_tournament_response.status }
         it { is_expected.to be >= 400 }
       end
     end
