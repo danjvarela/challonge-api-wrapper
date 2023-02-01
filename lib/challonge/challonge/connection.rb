@@ -26,6 +26,12 @@ module Challonge
       end
     end
 
+    def delete(url, params = {}, headers = nil)
+      @@connection.delete(url, params_with_token(params), headers) do |req|
+        yield req if block_given?
+      end
+    end
+
     def params_with_token(params)
       {api_key: ENV["CHALLONGE_API_KEY"]}.merge(params)
     end

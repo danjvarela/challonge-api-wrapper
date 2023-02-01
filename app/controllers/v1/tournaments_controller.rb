@@ -14,6 +14,11 @@ class V1::TournamentsController < ApplicationController
     render json: response.body, status: response.status
   end
 
+  def destroy
+    response = Challonge::Tournament.destroy(params[:id])
+    render json: response.body, status: response.status
+  end
+
   private
 
   def index_params

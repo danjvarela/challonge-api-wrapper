@@ -6,11 +6,11 @@ module Challonge
 
     class << self
       def all(params = {})
-        get("/v1/tournaments", params)
+        get(url_path, params)
       end
 
       def create(params = {})
-        post("/v1/tournaments") do |req|
+        post(url_path) do |req|
           params.deep_symbolize_keys!
           tournament = params[:tournament]
           next if tournament.blank?
@@ -21,10 +21,20 @@ module Challonge
       end
 
       def show(id_or_url, params = {})
-        get("/v1/tournaments/#{id_or_url}", params)
+        get("#{url_path}/#{id_or_url}", params)
       end
 
-      private :get, :post
+      def destroy(id_or_url, params = {})
+        delete("#{url_path}/#{id_or_url}", params)
+      end
+
+      private :get, :post, :delete
+
+      private
+
+      def url_path
+        "/v1/tournaments"
+      end
     end
   end
 end
