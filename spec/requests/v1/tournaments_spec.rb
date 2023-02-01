@@ -6,14 +6,14 @@ RSpec.describe "V1::Tournaments", type: :request do
       before :all do
         post v1_tournaments_path, params: {tournament: {name: random_name}}
       end
+      context "response" do
+        subject { response }
+        it { is_expected.to have_http_status(200) }
 
-      subject { response }
-
-      it { is_expected.to have_http_status(200) }
-
-      context "response body" do
-        subject { json_body }
-        it { is_expected.to have_key("tournament") }
+        context "body" do
+          subject { json_body }
+          it { is_expected.to have_key("tournament") }
+        end
       end
     end
 
@@ -22,13 +22,14 @@ RSpec.describe "V1::Tournaments", type: :request do
         post v1_tournaments_path, params: {tournament: {name: ""}}
       end
 
-      subject { response }
+      context "response" do
+        subject { response }
+        it { expect(response.status).to be >= 400 }
 
-      it { expect(response.status).to be >= 400 }
-
-      context "response body" do
-        subject { json_body }
-        it { is_expected.to have_key("errors") }
+        context "body" do
+          subject { json_body }
+          it { is_expected.to have_key("errors") }
+        end
       end
     end
   end
@@ -37,18 +38,18 @@ RSpec.describe "V1::Tournaments", type: :request do
     before :all do
       get v1_tournaments_path
     end
+    context "response" do
+      subject { response }
+      it { is_expected.to have_http_status(200) }
 
-    subject { response }
+      context "body" do
+        subject { json_body }
+        it { is_expected.to be_an_instance_of(Array) }
 
-    it { is_expected.to have_http_status(200) }
-
-    context "response body" do
-      subject { json_body }
-      it { is_expected.to be_an_instance_of(Array) }
-
-      context "elements" do
-        subject { json_body.first }
-        it { is_expected.to have_key("tournament") }
+        context "elements" do
+          subject { json_body.first }
+          it { is_expected.to have_key("tournament") }
+        end
       end
     end
   end
@@ -56,16 +57,17 @@ RSpec.describe "V1::Tournaments", type: :request do
   describe "GET /v1/tournaments/:id" do
     context "when id exists" do
       before :all do
-        id = Challonge::Tournament.create({tournament: {name: random_name}}).body["tournament"]["id"]
+        id = Challonge::Tournament.create({tournament: {name: random_name}}).body.tournament.id
         get v1_tournament_path(id: id)
       end
-      subject { response }
+      context "response" do
+        subject { response }
+        it { is_expected.to have_http_status(200) }
 
-      it { is_expected.to have_http_status(200) }
-
-      context "response body" do
-        subject { json_body }
-        it { is_expected.to have_key("tournament") }
+        context "body" do
+          subject { json_body }
+          it { is_expected.to have_key("tournament") }
+        end
       end
     end
 
@@ -73,14 +75,14 @@ RSpec.describe "V1::Tournaments", type: :request do
       before :all do
         get v1_tournament_path(id: long_id)
       end
+      context "response" do
+        subject { response }
+        it { expect(response.status).to be >= 400 }
 
-      subject { response }
-
-      it { expect(response.status).to be >= 400 }
-
-      context "response body" do
-        subject { json_body }
-        it { is_expected.to have_key("errors") }
+        context "body" do
+          subject { json_body }
+          it { is_expected.to have_key("errors") }
+        end
       end
     end
   end

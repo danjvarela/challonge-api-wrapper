@@ -1,4 +1,5 @@
 require_relative "base_url"
+require_relative "middlewares/response/mashify"
 
 module Challonge
   module Connection
@@ -8,6 +9,7 @@ module Challonge
         "Accept" => "application/json"
       }
     ) do |conn|
+      conn.use Challonge::Middlewares::Response::Mashify
       conn.response :json # decode res bodies as JSON
     end
 

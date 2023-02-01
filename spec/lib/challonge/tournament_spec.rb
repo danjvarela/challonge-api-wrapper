@@ -28,8 +28,7 @@ RSpec.describe Challonge::Tournament do
     context "with valid params" do
       context ".body" do
         subject { @success_response.body }
-        it { is_expected.to be_an_instance_of(Hash) }
-        it { expect(subject.keys).to include("tournament") }
+        it { expect(subject.keys).to include(:tournament) }
       end
       context ".status" do
         subject { @success_response.status }
@@ -40,8 +39,7 @@ RSpec.describe Challonge::Tournament do
     context "with invalid params" do
       context ".body" do
         subject { @error_response.body }
-        it { is_expected.to be_an_instance_of(Hash) }
-        it { expect(subject.keys).to include("errors") }
+        it { expect(subject.keys).to include(:errors) }
       end
       context ".status" do
         subject { @error_response.status }
@@ -52,7 +50,7 @@ RSpec.describe Challonge::Tournament do
 
   describe ".show" do
     before :all do
-      id = @created_tournament.body["tournament"]["id"]
+      id = @created_tournament.body.tournament.id
       @success_response = Challonge::Tournament.show(id)
       @error_response = Challonge::Tournament.show(
         "alskdjalskdjalskdjajdksfjlggwoeirulkj23l4j345934lkjfalksjdnlakjlqkjflaksjdlaksjdlaksjdqrjjlkjdlaksjd"
@@ -62,8 +60,7 @@ RSpec.describe Challonge::Tournament do
     context "with valid params" do
       context ".body" do
         subject { @success_response.body }
-        it { is_expected.to be_an_instance_of(Hash) }
-        it { expect(subject.keys).to include("tournament") }
+        it { expect(subject.keys).to include(:tournament) }
       end
       context ".status" do
         subject { @success_response.status }
@@ -74,8 +71,7 @@ RSpec.describe Challonge::Tournament do
     context "with invalid params" do
       context ".body" do
         subject { @error_response.body }
-        it { is_expected.to be_an_instance_of(Hash) }
-        it { expect(subject.keys).to include("errors") }
+        it { expect(subject.keys).to include(:errors) }
       end
       context ".status" do
         subject { @error_response.status }

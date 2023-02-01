@@ -1,1 +1,1 @@
-require_relative "tournament"
+require_relative "challonge/requests/tournament"
