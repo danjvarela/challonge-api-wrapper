@@ -1,6 +1,5 @@
 RSpec.describe Challonge::Tournament do
   before :all do
-    random_name = ("a".."z").to_a.sample(8).join
     @created_tournament = Challonge::Tournament.create({tournament: {name: random_name}})
   end
 
