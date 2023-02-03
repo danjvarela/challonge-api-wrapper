@@ -18,8 +18,10 @@ gem "tzinfo-data", platforms: %i[mingw mswin x64_mingw jruby]
 # Use Rack CORS for handling Cross-Origin Resource Sharing (CORS), making cross-origin AJAX possible
 gem "rack-cors"
 
+# HTTP client
 gem "faraday"
 
+# Manipulate hashes with ease
 gem "hashie"
 
 group :development, :test do
@@ -28,9 +30,9 @@ group :development, :test do
 
   gem "standard"
 
-  gem "dotenv-rails"
+  gem "rspec-rails"
 
-  gem "rspec-rails", "~> 6.0.0"
+  gem "dotenv-rails"
 end
 
 group :development do

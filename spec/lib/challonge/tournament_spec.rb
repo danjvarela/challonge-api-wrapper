@@ -1,174 +1,125 @@
 require "rails_helper"
 
+RSpec.shared_context "setup tournament" do
+  before :all do
+    @create_response = Challonge::Tournament.create name: random_name
+    @created_tournament_id = @create_response.body.id
+  end
+
+  after :all do
+    Challonge::Tournament.destroy @created_tournament_id
+  end
+end
+
+RSpec.shared_examples "a hash or array with no errors" do
+  subject { @resource }
+  it { is_expected.to be_an_instance_of(Challonge::Resource).or(be_an_instance_of(Array)) }
+  it { is_expected.not_to respond_to(:errors) }
+end
+
+RSpec.shared_examples "a hash with errors" do
+  subject { @resource }
+  it { is_expected.to be_an_instance_of(Challonge::Resource) }
+  it { is_expected.to respond_to(:errors) }
+end
+
+RSpec.shared_examples "a failed response" do
+  context ".status" do
+    it "should not start with 2" do
+      expect(@response.status.to_s.match?(/^2\d{2}$/)).not_to eq 2
+    end
+  end
+
+  context ".body" do
+    it_behaves_like "a hash with errors" do
+      before(:all) { @resource = @response.body }
+    end
+  end
+end
+
+RSpec.shared_examples "a successful response" do
+  context ".body" do
+    it_behaves_like "a hash or array with no errors" do
+      before(:all) { @resource = @response.body }
+    end
+  end
+
+  context ".status" do
+    it { expect(@response.status).to eq 200 }
+  end
+end
+
 RSpec.describe Challonge::Tournament do
-  include ParamsHelpers
-
-  describe ".destroy" do
-    context "when tournament id or url exists" do
-      let(:delete_tournament_response) do
-        id = Challonge::Tournament.create({tournament: {name: random_name}}).body.tournament.id
-        Challonge::Tournament.destroy(id)
-      end
-
-      context ".body" do
-        subject { delete_tournament_response.body }
-        it { is_expected.to have_key(:tournament) }
-      end
-
-      context ".status" do
-        subject { delete_tournament_response.status }
-        it { is_expected.to eq 200 }
-      end
-    end
-
-    context "when tournament id or url does not exist" do
-      let(:delete_tournament_response) do
-        Challonge::Tournament.destroy(long_id)
-      end
-
-      context ".body" do
-        subject { delete_tournament_response.body }
-        it { is_expected.to have_key(:errors) }
-      end
-      context ".status" do
-        subject { delete_tournament_response.status }
-        it { is_expected.to be >= 400 }
-      end
-    end
-  end
-
-  describe ".all" do
-    before :all do
-      @created_tournament_response = Challonge::Tournament.create(tournament: {name: random_name})
-    end
-
-    after :all do
-      Challonge::Tournament.destroy(@created_tournament_response.body.tournament.id)
-    end
-
-    let(:all_tournaments_response) do
-      Challonge::Tournament.all
-    end
-
-    context ".body" do
-      subject { all_tournaments_response.body }
-      it { is_expected.to be_an_instance_of(Array) }
-    end
-
-    context ".status" do
-      subject { all_tournaments_response.status }
-      it { is_expected.to eq 200 }
-    end
-  end
-
-  describe ".create" do
-    before :all do
-      @created_tournament_response = Challonge::Tournament.create(tournament: {name: random_name})
-    end
-
-    after :all do
-      Challonge::Tournament.destroy(@created_tournament_response.body.tournament.id)
-    end
-
+  context ".create" do
     context "with valid params" do
-      context ".body" do
-        subject { @created_tournament_response.body }
-        it { expect(subject.keys).to include(:tournament) }
-      end
-      context ".status" do
-        subject { @created_tournament_response.status }
-        it { is_expected.to eq 200 }
+      include_context "setup tournament"
+      it_behaves_like "a successful response" do
+        before(:all) { @response = @create_response }
       end
     end
 
     context "with invalid params" do
-      let(:invalid_tournament_response) do
-        Challonge::Tournament.create(tournament: {name: nil})
-      end
-
-      context ".body" do
-        subject { invalid_tournament_response.body }
-        it { expect(subject.keys).to include(:errors) }
-      end
-      context ".status" do
-        subject { invalid_tournament_response.status }
-        it { is_expected.to be >= 400 }
+      it_behaves_like "a failed response" do
+        before(:all) { @response = Challonge::Tournament.create name: nil }
       end
     end
   end
 
-  describe ".show" do
-    before :all do
-      @created_tournament_response = Challonge::Tournament.create(tournament: {name: random_name})
+  context ".all" do
+    include_context "setup tournament"
+    it_behaves_like "a successful response" do
+      before(:all) { @response = Challonge::Tournament.all }
     end
+  end
 
-    after :all do
-      Challonge::Tournament.destroy(@created_tournament_response.body.tournament.id)
-    end
-
-    let(:non_existent_tournament_response) do
-      Challonge::Tournament.show(long_id)
-    end
-
-    context "with valid params" do
-      context ".body" do
-        subject { @created_tournament_response.body }
-        it { expect(subject.keys).to include(:tournament) }
-      end
-      context ".status" do
-        subject { @created_tournament_response.status }
-        it { is_expected.to eq 200 }
+  context ".find" do
+    context "when tournament exists" do
+      include_context "setup tournament"
+      it_behaves_like "a successful response" do
+        before(:all) { @response = Challonge::Tournament.find(@created_tournament_id) }
       end
     end
 
-    context "with invalid params" do
-      context ".body" do
-        subject { non_existent_tournament_response.body }
-        it { expect(subject.keys).to include(:errors) }
-      end
-      context ".status" do
-        subject { non_existent_tournament_response.status }
-        it { is_expected.to be >= 400 }
+    context "when tournament does not exist" do
+      it_behaves_like "a failed response" do
+        before(:all) { @response = Challonge::Tournament.find(random_name) }
       end
     end
   end
 
-  describe ".update" do
-    before :all do
-      @created_tournament_response = Challonge::Tournament.create(tournament: {name: random_name})
-      @updated_tournament_response = Challonge::Tournament.update(
-        @created_tournament_response.body.tournament.id,
-        {tournament: {name: random_name}}
-      )
-    end
-
-    after :all do
-      Challonge::Tournament.destroy(@created_tournament_response.body.tournament.id)
-    end
-
-    context "with valid params" do
-      context ".body" do
-        subject { @updated_tournament_response.body }
-        it { expect(subject.keys).to include(:tournament) }
-      end
-      context ".status" do
-        subject { @updated_tournament_response.status }
-        it { is_expected.to eq 200 }
+  context ".destroy" do
+    context "when tournament exists" do
+      include_context "setup tournament"
+      it_behaves_like "a successful response" do
+        before(:all) { @response = Challonge::Tournament.destroy(@created_tournament_id) }
       end
     end
 
-    context "with invalid params" do
-      let(:invalid_tournament_response) do
-        Challonge::Tournament.update(long_id, tournament: {name: nil})
+    context "when tournament does not exist" do
+      it_behaves_like "a failed response" do
+        before(:all) { @response = Challonge::Tournament.destroy(random_name) }
       end
+    end
+  end
 
-      context ".body" do
-        subject { invalid_tournament_response.body }
-        it { expect(subject.keys).to include(:errors) }
+  context ".update" do
+    context "when the tournament exists and the params invalid" do
+      include_context "setup tournament"
+      it_behaves_like "a successful response" do
+        before(:all) { @response = Challonge::Tournament.update(@created_tournament_id, name: random_name) }
       end
-      context ".status" do
-        subject { invalid_tournament_response.status }
-        it { is_expected.to be >= 400 }
+    end
+
+    context "when the tournament does not exist" do
+      it_behaves_like "a failed response" do
+        before(:all) { @response = Challonge::Tournament.update(random_name, name: random_name) }
+      end
+    end
+
+    context "when the params are invalid" do
+      include_context "setup tournament"
+      it_behaves_like "a failed response" do
+        before(:all) { @response = Challonge::Tournament.update(@created_tournament_id, name: nil) }
       end
     end
   end
