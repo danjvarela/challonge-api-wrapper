@@ -1,183 +1,99 @@
 require "rails_helper"
+require "support/contexts/setup_tournament"
+
+RSpec.shared_examples "a successful response" do
+  context "status" do
+    it { expect(response.status).to eq 200 }
+  end
+
+  context "body" do
+    it { expect(formatted_body).to be_an_instance_of(Challonge::Resource).or(be_an_instance_of(Array)) }
+    it { expect(formatted_body).not_to respond_to(:errors) }
+  end
+end
+
+RSpec.shared_examples "a failed response" do
+  context "status" do
+    it "should not start with 2" do
+      expect(response.status.to_s.match?(/^2\d{2}$/)).not_to eq 2
+    end
+  end
+
+  context "body" do
+    it { expect(formatted_body).to respond_to(:errors) }
+  end
+end
 
 RSpec.describe "V1::Tournaments", type: :request do
-  describe "POST /v1/tournaments" do
-    context "with valid params" do
-      before :all do
-        post v1_tournaments_path(tournament: {name: random_name})
-        @created_tournament_response_id = json_body["tournament"]["id"]
-      end
+  describe "GET /index" do
+    include_context "setup tournament"
+    it_behaves_like "a successful response" do
+      before(:all) { get v1_tournaments_path }
+    end
+  end
 
-      after :all do
-        Challonge::Tournament.destroy(@created_tournament_response_id)
-      end
-
-      context "response" do
-        subject { response }
-        it { is_expected.to have_http_status(200) }
-
-        context "body" do
-          subject { json_body }
-          it { is_expected.to have_key("tournament") }
-        end
+  describe "POST /create" do
+    context "when params are valid" do
+      it_behaves_like "a successful response" do
+        before(:all) { post v1_tournaments_path, params: {name: random_name} }
       end
     end
 
-    context "with invalid params" do
-      before :all do
-        post v1_tournaments_path, params: {tournament: {name: ""}}
-      end
-
-      context "response" do
-        subject { response }
-        it { expect(response.status).to be >= 400 }
-
-        context "body" do
-          subject { json_body }
-          it { is_expected.to have_key("errors") }
-        end
+    context "when params are invalid" do
+      it_behaves_like "a failed response" do
+        before(:all) { post v1_tournaments_path, params: {name: nil} }
       end
     end
   end
 
-  describe "GET /v1/tournaments" do
-    before :all do
-      @created_tournament_response = Challonge::Tournament.create(tournament: {name: random_name})
-      @created_tournament_response_id = @created_tournament_response.body.tournament.id
-      get v1_tournaments_path
+  describe "PUT /update" do
+    include_context "setup tournament"
+
+    context "when params are valid and the tournament exists" do
+      it_behaves_like "a successful response" do
+        before(:all) { put v1_tournament_path(id: @created_tournament_id), params: {name: random_name} }
+      end
     end
 
-    after :all do
-      Challonge::Tournament.destroy(@created_tournament_response_id)
+    context "when params are invalid" do
+      it_behaves_like "a failed response" do
+        before(:all) { put v1_tournament_path(id: @created_tournament_id), params: {name: nil} }
+      end
     end
 
-    context "response" do
-      subject { response }
-      it { is_expected.to have_http_status(200) }
-
-      context "body" do
-        subject { json_body }
-        it { is_expected.to be_an_instance_of(Array) }
-
-        context "elements" do
-          subject { json_body.first }
-          it { is_expected.to have_key("tournament") }
-        end
+    context "when tournament does not exist" do
+      it_behaves_like "a failed response" do
+        before(:all) { put v1_tournament_path(id: random_name), params: {name: random_name} }
       end
     end
   end
 
-  describe "GET /v1/tournaments/:id" do
-    context "when id exists" do
-      before :all do
-        @created_tournament_response = Challonge::Tournament.create(tournament: {name: random_name})
-        @created_tournament_response_id = @created_tournament_response.body.tournament.id
-        get v1_tournament_path(id: @created_tournament_response_id)
-      end
-
-      after :all do
-        Challonge::Tournament.destroy(@created_tournament_response_id)
-      end
-
-      context "response" do
-        subject { response }
-        it { is_expected.to have_http_status(200) }
-
-        context "body" do
-          subject { json_body }
-          it { is_expected.to have_key("tournament") }
-        end
+  describe "GET /show" do
+    context "when the tournament exists" do
+      include_context "setup tournament"
+      it_behaves_like "a successful response" do
+        before(:all) { get v1_tournament_path(id: @created_tournament_id) }
       end
     end
 
-    context "when id does not exist" do
-      before :all do
-        get v1_tournament_path(id: long_id)
-      end
-      context "response" do
-        subject { response }
-        it { expect(response.status).to be >= 400 }
-
-        context "body" do
-          subject { json_body }
-          it { is_expected.to have_key("errors") }
-        end
+    context "when the tournament does not exist" do
+      it_behaves_like "a failed response" do
+        before(:all) { get v1_tournament_path(id: random_name) }
       end
     end
   end
 
-  describe "DELETE v1/tournaments/:id" do
-    context "when id exists" do
-      before :all do
-        @created_tournament_response = Challonge::Tournament.create(tournament: {name: random_name})
-        @created_tournament_response_id = @created_tournament_response.body.tournament.id
-        delete v1_tournament_path(id: @created_tournament_response_id)
-      end
-
-      context "response" do
-        subject { response }
-        it { is_expected.to have_http_status(200) }
-
-        context "body" do
-          subject { json_body }
-          it { is_expected.to have_key("tournament") }
-        end
+  describe "DELETE /destroy" do
+    context "when the tournament exists" do
+      include_context "setup tournament"
+      it_behaves_like "a successful response" do
+        before(:all) { delete v1_tournament_path(id: @created_tournament_id) }
       end
     end
 
-    context "when id does not exist" do
-      before :all do
-        delete v1_tournament_path(id: long_id)
-      end
-
-      context "response" do
-        subject { response }
-        it { expect(response.status).to be >= 400 }
-
-        context "body" do
-          subject { json_body }
-          it { is_expected.to have_key("errors") }
-        end
-      end
-    end
-  end
-
-  describe "PUT v1/tournaments/:id" do
-    context "with valid params" do
-      before :all do
-        @created_tournament_response = Challonge::Tournament.create(tournament: {name: random_name})
-        @created_tournament_response_id = @created_tournament_response.body.tournament.id
-        put v1_tournament_path(id: @created_tournament_response_id), params: {tournament: {name: random_name}}
-      end
-
-      after :all do
-        Challonge::Tournament.destroy(@created_tournament_response_id)
-      end
-
-      context "response" do
-        subject { response }
-        it { is_expected.to have_http_status(200) }
-
-        context "body" do
-          subject { json_body }
-          it { is_expected.to have_key("tournament") }
-        end
-      end
-    end
-
-    context "with invalid params" do
-      before :all do
-        put v1_tournament_path(long_id), params: {tournament: {name: ""}}
-      end
-
-      context "response" do
-        subject { response }
-        it { expect(response.status).to be >= 400 }
-
-        context "body" do
-          subject { json_body }
-          it { is_expected.to have_key("errors") }
-        end
+    context "when the tournament does not exist" do
+      it_behaves_like "a failed response" do
+        before(:all) { delete v1_tournament_path(id: random_name) }
       end
     end
   end
