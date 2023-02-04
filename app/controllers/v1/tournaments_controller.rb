@@ -4,7 +4,7 @@ class V1::TournamentsController < ApplicationController
   end
 
   def index
-    response = Challonge::Tournament.all
+    response = Challonge::Tournament.all(params)
     render_json(response)
   end
 
