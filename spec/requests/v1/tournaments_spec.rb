@@ -35,7 +35,11 @@ RSpec.describe "V1::Tournaments", type: :request do
   describe "POST /create" do
     context "when params are valid" do
       it_behaves_like "a successful response" do
-        before(:all) { post v1_tournaments_path, params: {name: random_name} }
+        before(:all) do
+          post v1_tournaments_path, params: {name: random_name}
+          @created_tournament_id = formatted_body.id
+        end
+        after(:all) { Challonge::Tournament.destroy(@created_tournament_id) }
       end
     end
 
